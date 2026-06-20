@@ -75,6 +75,37 @@ export interface ResumoLote {
   data_retirada?: string | null
 }
 
+export interface Oportunidade {
+  id: string
+  descricao: string
+  origem: string | null
+  data_fechamento: string | null
+  valor_lance_estimado: number | null
+  valor_lance_dado: number | null
+  custo_extras_estimado: number
+  status: 'avaliando' | 'lance_dado' | 'arrematado' | 'perdido'
+  observacoes: string | null
+  lote_convertido_id: string | null
+  created_at: string
+}
+
+export interface OportunidadeItem {
+  id: string
+  oportunidade_id: string
+  modelo: string | null
+  valor_referencia: number
+  condicao: 'ok' | 'defeito'
+  created_at: string
+}
+
+export interface ResumoOportunidade extends Oportunidade {
+  qtd_itens: number
+  soma_referencia: number
+  receita_sugerida: number
+  custo_estimado: number
+  lucro_estimado: number
+}
+
 export interface ContaReceber {
   id: string
   item_id: string

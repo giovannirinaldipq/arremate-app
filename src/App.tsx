@@ -8,6 +8,8 @@ import Lotes from './pages/Lotes'
 import LoteDetalhe from './pages/LoteDetalhe'
 import ItemDetalhe from './pages/ItemDetalhe'
 import ContasReceber from './pages/ContasReceber'
+import Oportunidades from './pages/Oportunidades'
+import OportunidadeDetalhe from './pages/OportunidadeDetalhe'
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
               <Route path="lotes" element={<Lotes />} />
               <Route path="lotes/:id" element={<LoteDetalhe />} />
               <Route path="lotes/:loteId/itens/:itemId" element={<ItemDetalhe />} />
+              <Route path="oportunidades" element={<Oportunidades />} />
+              <Route path="oportunidades/:id" element={<OportunidadeDetalhe />} />
               <Route path="contas" element={<ContasReceber />} />
             </Route>
           </Route>

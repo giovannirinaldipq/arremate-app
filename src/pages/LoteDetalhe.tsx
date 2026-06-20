@@ -186,6 +186,14 @@ export default function LoteDetalhe() {
     setShowAddItem(false); load()
   }
 
+  // ── excluir lote ─────────────────────────────────────────────────────────
+  async function excluirLote() {
+    if (!confirm(`Excluir o lote "${lote?.origem}"?\n\nTodos os itens, custos e parcelas serão removidos. Esta ação não pode ser desfeita.`)) return
+    const { error } = await supabase.from('lotes').delete().eq('id', id)
+    if (error) { alert('Erro ao excluir: ' + error.message); return }
+    navigate('/lotes', { replace: true })
+  }
+
   // ── render ───────────────────────────────────────────────────────────────
   if (loading) return <div className="empty-state">Carregando…</div>
   if (erro)    return <div className="empty-state" style={{ color: 'var(--red)' }}>Erro: {erro}</div>
@@ -425,6 +433,13 @@ export default function LoteDetalhe() {
           </div>
         </Modal>
       )}
+
+      {/* danger zone */}
+      <div style={{ marginTop: 32, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+        <button onClick={excluirLote} style={{ background: 'none', border: '1px solid var(--red)', color: 'var(--red)', borderRadius: 10, padding: '7px 16px', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          Excluir lote
+        </button>
+      </div>
     </>
   )
 }
