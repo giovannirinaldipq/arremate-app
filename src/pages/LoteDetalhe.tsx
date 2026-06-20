@@ -82,15 +82,20 @@ export default function LoteDetalhe() {
   useEffect(() => { load() }, [id])
 
   // ── computed ─────────────────────────────────────────────────────────────
-  const totalExtras  = extras.reduce((s, e) => s + Number(e.valor), 0)
-  const custoTotal   = lote ? Number(lote.valor_lote) + totalExtras : 0
-  const vendidos     = itens.filter(i => i.status === 'vendido')
-  const totalVendido = vendidos.reduce((s, i) => s + Number(i.preco_venda ?? 0), 0)
-  const lucro        = vendidos.reduce((s, i) => s + Number(i.lucro_item ?? 0), 0)
-  const falta        = Math.max(0, custoTotal - totalVendido)
-  const pct          = custoTotal > 0 ? Math.min(100, totalVendido / custoTotal * 100) : 0
-  const breakEven    = totalVendido >= custoTotal
-  const cor          = breakEven ? 'var(--green)' : 'var(--amber)'
+  const totalExtras    = extras.reduce((s, e) => s + Number(e.valor), 0)
+  const custoTotal     = lote ? Number(lote.valor_lote) + totalExtras : 0
+  const vendidos       = itens.filter(i => i.status === 'vendido')
+  const totalVendido   = vendidos.reduce((s, i) => s + Number(i.preco_venda ?? 0), 0)
+  const lucro          = vendidos.reduce((s, i) => s + Number(i.lucro_item ?? 0), 0)
+  const falta          = Math.max(0, custoTotal - totalVendido)
+  const pct            = custoTotal > 0 ? Math.min(100, totalVendido / custoTotal * 100) : 0
+  const breakEven      = totalVendido >= custoTotal
+  const cor            = breakEven ? 'var(--green)' : 'var(--amber)'
+
+  const naoVendidos      = itens.filter(i => i.status !== 'vendido')
+  const possibilidade    = naoVendidos.reduce((s, i) => s + Number(i.preco_sugerido ?? 0), 0)
+  const lucroPotencial   = totalVendido + possibilidade - custoTotal
+  const pctLucroPot      = custoTotal > 0 ? (lucroPotencial / custoTotal * 100) : 0
 
   const itensFiltrados = filtro === 'todos' ? itens : itens.filter(i => i.status === filtro)
   const counts = {
@@ -208,11 +213,15 @@ export default function LoteDetalhe() {
       </div>
 
       {/* KPIs */}
-      <div className="bento c4">
+      <div className="bento c3">
         <Kpi label="Custo total"         value={BRL(custoTotal)}      sub="lote + extras" />
         <Kpi label="Recuperado"          value={BRL(totalVendido)}    sub={`${pct.toFixed(1)}% do custo`} color={breakEven ? 'green' : 'amber'} />
-        <Kpi label="Lucro realizado"     value={BRL(lucro)}           sub="itens vendidos" color={lucro > 0 ? 'green' : ''} />
+        <Kpi label="Lucro realizado"     value={BRL(lucro)}           sub="itens vendidos" color={lucro > 0 ? 'green' : lucro < 0 ? 'red' : ''} />
+      </div>
+      <div className="bento c3">
         <Kpi label="Falta p/ break-even" value={breakEven ? '✓ atingido' : BRL(falta)} sub={breakEven ? 'lote no lucro' : 'até zerar'} />
+        <Kpi label="Faturamento possível" value={BRL(possibilidade)} sub={`${naoVendidos.length} item${naoVendidos.length !== 1 ? 'ns' : ''} a vender`} color="amber" />
+        <Kpi label="Lucro potencial" value={BRL(lucroPotencial)} sub={`${pctLucroPot >= 0 ? '+' : ''}${pctLucroPot.toFixed(1)}% sobre o custo`} color={lucroPotencial > 0 ? 'green' : lucroPotencial < 0 ? 'red' : ''} />
       </div>
 
       {/* Medidor */}
@@ -317,13 +326,16 @@ export default function LoteDetalhe() {
                         {it.status === 'estoque'  && <span className={`age ${parado ? 'warn' : ''}`}>{dias} dias</span>}
                       </td>
                       <td className="right" onClick={e => e.stopPropagation()}>
-                        {it.status === 'estoque' && (
-                          <button className="btn primary" style={{ padding: '5px 10px', fontSize: 12 }}
-                            onClick={() => setSaleItem({ id: it.id, modelo: it.modelo, preco_sugerido: it.preco_sugerido, custo_total_unitario: it.custo_total_unitario })}>
-                            Vender
+                        {(it.status === 'estoque' || it.status === 'avaliar') && (
+                          <button
+                            className="btn primary"
+                            style={{ padding: '5px 10px', fontSize: 12, background: it.status === 'avaliar' ? 'linear-gradient(135deg,#d97706,#b45309)' : undefined, boxShadow: it.status === 'avaliar' ? '0 4px 12px rgba(217,119,6,0.35)' : undefined }}
+                            onClick={() => setSaleItem({ id: it.id, modelo: it.modelo, preco_sugerido: it.preco_sugerido, custo_total_unitario: it.custo_total_unitario })}
+                          >
+                            {it.status === 'avaliar' ? 'Pré-venda' : 'Vender'}
                           </button>
                         )}
-                        {it.status !== 'estoque' && <span className="chev">›</span>}
+                        {it.status === 'vendido' && <span className="chev">›</span>}
                       </td>
                     </tr>
                   )

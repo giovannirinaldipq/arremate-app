@@ -165,9 +165,13 @@ export default function ItemDetalhe() {
           <span className={`badge ${isDefeito ? 'defeito' : 'ok'}`}>{isDefeito ? 'Defeito' : 'OK'}</span>
           <span className={`badge ${badgeCls}`}>{badgeTxt}</span>
           <button className="btn" onClick={abrirEditItem}>Editar item</button>
-          {!isVendido && !isAvaliar && (
-            <button className="btn primary" onClick={() => setSaleItem({ id: item.id, modelo: item.modelo, preco_sugerido: sugUnit, custo_total_unitario: custoUnit })}>
-              Registrar venda
+          {!isVendido && (
+            <button
+              className="btn primary"
+              style={isAvaliar ? { background: 'linear-gradient(135deg,#d97706,#b45309)', boxShadow: '0 4px 12px rgba(217,119,6,0.35)', borderColor: 'transparent' } : undefined}
+              onClick={() => setSaleItem({ id: item.id, modelo: item.modelo, preco_sugerido: sugUnit, custo_total_unitario: custoUnit })}
+            >
+              {isAvaliar ? 'Pré-venda' : 'Registrar venda'}
             </button>
           )}
         </div>
