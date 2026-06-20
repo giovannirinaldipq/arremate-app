@@ -1,10 +1,21 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 
 export default function Layout() {
   const location = useLocation()
+  const navigate  = useNavigate()
+  const { user, signOut } = useAuth()
   const [hasOverdue, setHasOverdue] = useState(false)
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/login', { replace: true })
+  }
+
+  const emailLabel = user?.email ?? ''
+  const inicial    = emailLabel.charAt(0).toUpperCase()
 
   useEffect(() => {
     supabase
@@ -84,10 +95,10 @@ export default function Layout() {
 
           <div style={{ flex: 1 }} />
 
-          {/* Avatar */}
+          {/* Avatar + sair */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
-              Giovanni
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', fontWeight: 500, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {emailLabel}
             </span>
             <span style={{
               width: 32, height: 32, borderRadius: '50%',
@@ -96,7 +107,28 @@ export default function Layout() {
               display: 'grid', placeItems: 'center',
               fontWeight: 700, fontSize: 13,
               boxShadow: '0 0 0 2px rgba(99,102,241,0.4)',
-            }}>G</span>
+              flexShrink: 0,
+            }}>{inicial}</span>
+            <button
+              onClick={handleSignOut}
+              title="Sair"
+              style={{
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8,
+                color: 'rgba(255,255,255,0.6)',
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: 'inherit',
+                padding: '5px 10px',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { (e.target as HTMLButtonElement).style.background = 'rgba(220,38,38,0.2)'; (e.target as HTMLButtonElement).style.color = '#fca5a5' }}
+              onMouseLeave={e => { (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.07)'; (e.target as HTMLButtonElement).style.color = 'rgba(255,255,255,0.6)' }}
+            >
+              Sair
+            </button>
           </div>
         </div>
       </header>
