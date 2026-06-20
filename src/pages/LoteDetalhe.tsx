@@ -97,6 +97,12 @@ export default function LoteDetalhe() {
   const lucroPotencial   = totalVendido + possibilidade - custoTotal
   const pctLucroPot      = custoTotal > 0 ? (lucroPotencial / custoTotal * 100) : 0
 
+  // ── estado dos produtos (íntegros x com problema) ─────────────────────────
+  const comProblema = itens.filter(i => i.condicao === 'defeito').length
+  const inteiras    = itens.length - comProblema
+  const pctBom      = itens.length > 0 ? (inteiras / itens.length * 100) : 0
+  const corEstado   = pctBom >= 70 ? 'var(--green)' : pctBom >= 40 ? 'var(--amber)' : 'var(--red)'
+
   const itensFiltrados = filtro === 'todos' ? itens : itens.filter(i => i.status === filtro)
   const counts = {
     todos:   itens.length,
@@ -243,6 +249,25 @@ export default function LoteDetalhe() {
           {breakEven
             ? 'Lote no lucro. Tudo que vender daqui pra frente é margem líquida.'
             : `Recuperou ${BRL(totalVendido)} de ${BRL(custoTotal)}. Faltam ${BRL(falta)} para zerar.`}
+        </div>
+      </div>
+
+      {/* Estado dos produtos */}
+      <div className="panel meter-big">
+        <div className="meter-head">
+          <span className="lbl">
+            Estado dos produtos
+            {itens.length > 0 && <> — {inteiras} inteira{inteiras !== 1 ? 's' : ''} · {comProblema} com problema</>}
+          </span>
+          <span className="pct num" style={{ color: corEstado }}>
+            {itens.length > 0 ? `${pctBom.toFixed(0)}% bom` : '—'}
+          </span>
+        </div>
+        <div className="meter"><div className="fill" style={{ width: `${pctBom}%`, background: corEstado }} /></div>
+        <div className="meter-foot">
+          {itens.length === 0
+            ? 'Marque a condição de cada item (OK ou Defeito) para acompanhar o estado do lote.'
+            : `${pctBom.toFixed(0)}% dos itens estão íntegros. Quanto pior o estado, mais agressivo o desconto na hora de formalizar os preços de venda.`}
         </div>
       </div>
 

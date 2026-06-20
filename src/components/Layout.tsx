@@ -76,7 +76,6 @@ export default function Layout() {
           <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <NavLink to="/" end style={tabStyle}>Dashboard</NavLink>
             <NavLink to="/lotes" style={tabStyle}>Lotes</NavLink>
-            <NavLink to="/oportunidades" style={tabStyle}>Oportunidades</NavLink>
             <NavLink to="/contas" style={tabStyle}>
               {({ isActive }) => (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

@@ -7,6 +7,8 @@ import type { ResumoLote } from '../types'
 interface LoteCard extends ResumoLote {
   data_arremate: string | null
   data_retirada: string | null
+  cond_total: number
+  cond_defeito: number
 }
 
 interface NovoForm {
@@ -32,17 +34,29 @@ export default function Lotes() {
     setLoading(true)
     setErro(null)
     try {
-      const [resumosRes, lotesRes] = await Promise.all([
+      const [resumosRes, lotesRes, itensRes] = await Promise.all([
         supabase.from('resumo_lotes').select('*'),
         supabase.from('lotes').select('id, data_arremate, data_retirada').order('created_at', { ascending: false }),
+        supabase.from('itens').select('lote_id, condicao'),
       ])
       if (resumosRes.error) throw resumosRes.error
       if (lotesRes.error)  throw lotesRes.error
+      if (itensRes.error)  throw itensRes.error
 
       const datesById = new Map(
         (lotesRes.data ?? []).map(l => [l.id, l]),
       )
-      // preserva a ordem de criação dos lotes
+
+      // conta condicao (ok x defeito) por lote
+      const condById = new Map<string, { total: number; defeito: number }>()
+      for (const it of (itensRes.data ?? []) as { lote_id: string; condicao: string }[]) {
+        const c = condById.get(it.lote_id) ?? { total: 0, defeito: 0 }
+        c.total += 1
+        if (it.condicao === 'defeito') c.defeito += 1
+        condById.set(it.lote_id, c)
+      }
+
+      // preserva a ordem de criacao dos lotes
       const ordenado = (lotesRes.data ?? [])
         .map(l => resumosRes.data?.find(r => r.id === l.id))
         .filter(Boolean) as ResumoLote[]
@@ -51,6 +65,8 @@ export default function Lotes() {
         ...r,
         data_arremate: datesById.get(r.id)?.data_arremate ?? null,
         data_retirada: datesById.get(r.id)?.data_retirada ?? null,
+        cond_total:   condById.get(r.id)?.total ?? 0,
+        cond_defeito: condById.get(r.id)?.defeito ?? 0,
       })))
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Erro ao carregar lotes.')
@@ -77,7 +93,7 @@ export default function Lotes() {
   async function salvar() {
     if (!form.origem.trim()) { alert('Informe a origem do lote.'); return }
     const valor = parseFloat(form.valor_lote.replace(',', '.'))
-    if (!valor || valor <= 0) { alert('Informe um valor de lance válido.'); return }
+    if (!valor || valor <= 0) { alert('Informe um valor de lance valido.'); return }
 
     setSaving(true)
     const { error } = await supabase.from('lotes').insert({
@@ -94,7 +110,7 @@ export default function Lotes() {
     load()
   }
 
-  if (loading) return <div className="empty-state">Carregando…</div>
+  if (loading) return <div className="empty-state">Carregando...</div>
   if (erro)    return <div className="empty-state" style={{ color: 'var(--red)' }}>Erro: {erro}</div>
 
   return (
@@ -102,7 +118,7 @@ export default function Lotes() {
       <div className="page-head">
         <div>
           <h1>Lotes</h1>
-          <p>Cada lote é uma compra. Clique para abrir.</p>
+          <p>Cada lote e uma compra. Clique para abrir.</p>
         </div>
         <button className="btn primary" onClick={abrirModal}>+ Novo lote</button>
       </div>
@@ -152,8 +168,20 @@ export default function Lotes() {
               </div>
             </div>
 
+            {l.cond_total > 0 && (() => {
+              const bom = l.cond_total - l.cond_defeito
+              const pb  = bom / l.cond_total * 100
+              const cb  = pb >= 70 ? 'var(--green)' : pb >= 40 ? 'var(--amber)' : 'var(--red)'
+              return (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, fontSize: 12.5 }}>
+                  <span style={{ color: 'var(--mut)', fontWeight: 600 }}>Estado bom dos produtos</span>
+                  <span className="num" style={{ color: cb, fontWeight: 700 }}>{pb.toFixed(0)}% · {bom}/{l.cond_total} inteiras</span>
+                </div>
+              )
+            })()}
+
             <div className="meter-head">
-              <span className="lbl">Progresso até o break-even</span>
+              <span className="lbl">Progresso ate o break-even</span>
               <span className="pct num" style={{ color: cor }}>{pct.toFixed(1)}%</span>
             </div>
             <div className="meter">
@@ -167,7 +195,7 @@ export default function Lotes() {
         )
       })}
 
-      {/* ── Modal novo lote ── */}
+      {/* Modal novo lote */}
       <div
         className={`overlay ${showModal ? 'show' : ''}`}
         onClick={e => { if (e.target === e.currentTarget) fecharModal() }}
@@ -175,14 +203,14 @@ export default function Lotes() {
         <div className="modal" role="dialog" aria-modal="true">
           <h3>Novo lote</h3>
           <p className="msub">
-            Registre a compra. Itens e custos extras são adicionados depois.
+            Registre a compra. Itens e custos extras sao adicionados depois.
           </p>
 
           <div className="field">
-            <label>Origem / descrição</label>
+            <label>Origem / descricao</label>
             <input
               ref={origemRef}
-              placeholder="Ex: Casas Bahia — Lote 03"
+              placeholder="Ex: Casas Bahia - Lote 03"
               value={form.origem}
               onChange={set('origem')}
               onKeyDown={e => e.key === 'Enter' && salvar()}
@@ -230,7 +258,7 @@ export default function Lotes() {
           <div className="modal-actions">
             <button className="btn" onClick={fecharModal}>Cancelar</button>
             <button className="btn primary" onClick={salvar} disabled={saving}>
-              {saving ? 'Salvando…' : 'Criar lote'}
+              {saving ? 'Salvando...' : 'Criar lote'}
             </button>
           </div>
         </div>
