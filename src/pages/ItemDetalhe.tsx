@@ -36,10 +36,10 @@ export default function ItemDetalhe() {
   const [editForm,      setEditForm]      = useState<EditItemForm>({ modelo: '', valor_referencia: '', condicao: 'ok', descricao_defeito: '', custo_conserto: '', status: 'avaliar' })
   const [savingEdit,    setSavingEdit]    = useState(false)
 
-  // editar specs
-  const [showSpecs,  setShowSpecs]  = useState(false)
-  const [specsRows,  setSpecsRows]  = useState<[string, string][]>([])
-  const [savingSpec, setSavingSpec] = useState(false)
+  // editar observações
+  const [showObs,   setShowObs]   = useState(false)
+  const [obsText,   setObsText]   = useState('')
+  const [savingObs, setSavingObs] = useState(false)
 
   async function load() {
     if (!itemId || !loteId) return
@@ -106,23 +106,18 @@ export default function ItemDetalhe() {
     load()
   }
 
-  function abrirSpecs() {
+  function abrirObs() {
     if (!item) return
-    const entries = Object.entries(item.specs ?? {})
-    setSpecsRows(entries.length > 0 ? entries : [['', '']])
-    setShowSpecs(true)
+    setObsText(item.observacoes ?? '')
+    setShowObs(true)
   }
-  async function salvarSpecs() {
+  async function salvarObs() {
     if (!item) return
-    setSavingSpec(true)
-    const specs = Object.fromEntries(specsRows.filter(([k]) => k.trim()))
-    const { error } = await supabase.from('itens').update({ specs }).eq('id', item.id)
-    setSavingSpec(false)
+    setSavingObs(true)
+    const { error } = await supabase.from('itens').update({ observacoes: obsText.trim() || null }).eq('id', item.id)
+    setSavingObs(false)
     if (error) { alert('Erro: ' + error.message); return }
-    setShowSpecs(false); load()
-  }
-  function setSpecRow(i: number, col: 0 | 1, val: string) {
-    setSpecsRows(rows => rows.map((r, idx) => idx === i ? (col === 0 ? [val, r[1]] : [r[0], val]) : r))
+    setShowObs(false); load()
   }
 
   if (loading) return <div className="empty-state">Carregando…</div>
@@ -184,22 +179,16 @@ export default function ItemDetalhe() {
       )}
 
       <div className="item-grid">
-        {/* Especificações */}
+        {/* Observações */}
         <div className="panel">
           <div className="panel-head">
-            <h2>Especificações técnicas</h2>
-            <button className="btn" onClick={abrirSpecs}>Editar</button>
+            <h2>Observações</h2>
+            <button className="btn" onClick={abrirObs}>Editar</button>
           </div>
           <div className="panel-body">
-            {Object.keys(item.specs ?? {}).length === 0
-              ? <p style={{ color: 'var(--mut)', fontSize: 13 }}>Nenhuma especificação. Clique em Editar para adicionar.</p>
-              : (
-                <div className="specs">
-                  {Object.entries(item.specs).map(([k, v]) => (
-                    <div key={k} className="spec"><div className="k">{k}</div><div className="v">{v}</div></div>
-                  ))}
-                </div>
-              )
+            {item.observacoes
+              ? <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{item.observacoes}</p>
+              : <p style={{ color: 'var(--mut)', fontSize: 13 }}>Nenhuma observação. Clique em Editar para acompanhar este produto.</p>
             }
             {isDefeito && item.descricao_defeito && (
               <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--red-bg)', borderRadius: 8, fontSize: 13, color: '#8f2b23' }}>
@@ -267,8 +256,8 @@ export default function ItemDetalhe() {
               </div>
               <div className="compare-grid">
                 {[
-                  { key: 'estado' as const, label: 'No estado (55%)', cmp: cmpEstado },
-                  { key: 'consertar' as const, label: 'Consertar (88%)', cmp: cmpConsertar },
+                  { key: 'estado' as const, label: `No estado (${FATOR_ESTADO * 100}%)`, cmp: cmpEstado },
+                  { key: 'consertar' as const, label: `Consertar (${FATOR_INTEGRO * 100}%)`, cmp: cmpConsertar },
                 ].map(({ key, label, cmp }) => (
                   <div key={key} className={`compare-card ${veredito === key ? 'winner' : ''}`}>
                     <div className="c-label">{label}</div>
@@ -306,7 +295,9 @@ export default function ItemDetalhe() {
             <div className="price-line"><span className="lbl">Preço de venda</span><span className="num">{BRL(Number(item.preco_venda))}</span></div>
             <div className="price-line">
               <span className="lbl">Lucro real</span>
-              <span className="num" style={{ color: Number(item.lucro_item) >= 0 ? 'var(--green)' : 'var(--red)' }}>{BRL(Number(item.lucro_item))}</span>
+              <span className="num" style={{ color: Number(item.lucro_item) >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                {BRL(Number(item.lucro_item))}{custoUnit > 0 && <> · {(Number(item.lucro_item) / custoUnit * 100).toFixed(1)}%</>}
+              </span>
             </div>
             <div className="price-line">
               <span className="lbl">Pagamento</span>
@@ -384,28 +375,18 @@ export default function ItemDetalhe() {
         </div>
       )}
 
-      {/* Modal editar specs */}
-      {showSpecs && (
-        <div className="overlay show" onClick={e => { if (e.target === e.currentTarget) setShowSpecs(false) }}>
+      {/* Modal editar observações */}
+      {showObs && (
+        <div className="overlay show" onClick={e => { if (e.target === e.currentTarget) setShowObs(false) }}>
           <div className="modal" style={{ maxWidth: 500 }}>
-            <h3>Especificações técnicas</h3>
-            <p className="msub">Campos livres: Polegadas, Resolução, Nº de série, etc.</p>
-            {specsRows.map(([k, v], i) => (
-              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                <input placeholder="Campo" value={k} onChange={e => setSpecRow(i, 0, e.target.value)}
-                  style={{ flex: 1, fontFamily: 'inherit', fontSize: 13, padding: '7px 10px', border: '1px solid var(--line)', borderRadius: 8, outline: 'none' }} />
-                <input placeholder="Valor" value={v} onChange={e => setSpecRow(i, 1, e.target.value)}
-                  style={{ flex: 1, fontFamily: 'inherit', fontSize: 13, padding: '7px 10px', border: '1px solid var(--line)', borderRadius: 8, outline: 'none' }} />
-                <button onClick={() => setSpecsRows(rows => rows.filter((_, idx) => idx !== i))}
-                  style={{ background: 'none', border: 'none', color: 'var(--mut)', cursor: 'pointer', fontSize: 18, padding: '0 4px' }}>×</button>
-              </div>
-            ))}
-            <button className="btn" style={{ marginTop: 4, fontSize: 13 }} onClick={() => setSpecsRows(rows => [...rows, ['', '']])}>
-              + Adicionar campo
-            </button>
+            <h3>Observações</h3>
+            <p className="msub">Anote o que for útil para acompanhar este produto: estado, histórico, combinados, etc.</p>
+            <textarea value={obsText} onChange={e => setObsText(e.target.value)} rows={8}
+              placeholder="Escreva aqui…"
+              style={{ width: '100%', fontFamily: 'inherit', fontSize: 14, padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 9, outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
             <div className="modal-actions">
-              <button className="btn" onClick={() => setShowSpecs(false)}>Cancelar</button>
-              <button className="btn primary" onClick={salvarSpecs} disabled={savingSpec}>{savingSpec ? 'Salvando…' : 'Salvar'}</button>
+              <button className="btn" onClick={() => setShowObs(false)}>Cancelar</button>
+              <button className="btn primary" onClick={salvarObs} disabled={savingObs}>{savingObs ? 'Salvando…' : 'Salvar'}</button>
             </div>
           </div>
         </div>

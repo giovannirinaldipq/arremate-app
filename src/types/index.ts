@@ -24,6 +24,7 @@ export interface Item {
   modelo: string | null
   valor_referencia: number | null
   specs: Record<string, string>
+  observacoes: string | null
   condicao: 'ok' | 'defeito'
   descricao_defeito: string | null
   custo_conserto: number

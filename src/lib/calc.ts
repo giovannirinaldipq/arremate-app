@@ -4,7 +4,7 @@ export const BRL = (v: number): string =>
 export const dtBR = (s: string | null | undefined): string =>
   s ? new Date(s + 'T12:00:00').toLocaleDateString('pt-BR') : '—'
 
-export const FATOR_INTEGRO = 0.88  // íntegro ou defeito+consertar
+export const FATOR_INTEGRO = 0.75  // íntegro ou defeito+consertar
 export const FATOR_ESTADO  = 0.55  // defeito + vender no estado
 
 export function precoSugerido(

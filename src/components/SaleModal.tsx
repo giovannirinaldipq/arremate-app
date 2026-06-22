@@ -72,6 +72,10 @@ export default function SaleModal({ item, onClose, onSuccess }: Props) {
     onSuccess()
   }
 
+  const precoNum = parseFloat(preco.replace(',', '.')) || 0
+  const lucro = item ? precoNum - item.custo_total_unitario : 0
+  const lucroPct = item && item.custo_total_unitario > 0 ? lucro / item.custo_total_unitario * 100 : 0
+
   if (!item) return null
 
   return (
@@ -93,6 +97,14 @@ export default function SaleModal({ item, onClose, onSuccess }: Props) {
           <label>Preço de venda (R$)</label>
           <input type="number" inputMode="decimal" value={preco} onChange={e => setPreco(e.target.value)} />
         </div>
+        {precoNum > 0 && (
+          <div style={{ margin: '-4px 0 13px', padding: '8px 12px', borderRadius: 8, fontSize: 13, display: 'flex', justifyContent: 'space-between', background: lucro >= 0 ? 'var(--green-bg)' : 'var(--red-bg)' }}>
+            <span style={{ color: 'var(--mut)', fontWeight: 600 }}>Lucro nesta venda</span>
+            <span className="num" style={{ fontWeight: 700, color: lucro >= 0 ? 'var(--green)' : 'var(--red)' }}>
+              {BRL(lucro)} · {lucroPct >= 0 ? '+' : ''}{lucroPct.toFixed(1)}%
+            </span>
+          </div>
+        )}
         <div className="field">
           <label>Forma de pagamento</label>
           <select value={pgto} onChange={e => setPgto(e.target.value as 'avista' | 'parcelado')}>
