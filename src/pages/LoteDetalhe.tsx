@@ -97,10 +97,11 @@ export default function LoteDetalhe() {
   const lucroPotencial   = totalVendido + possibilidade - custoTotal
   const pctLucroPot      = custoTotal > 0 ? (lucroPotencial / custoTotal * 100) : 0
 
-  // ── estado dos produtos (íntegros x com problema) ─────────────────────────
-  const comProblema = itens.filter(i => i.condicao === 'defeito').length
-  const inteiras    = itens.length - comProblema
-  const pctBom      = itens.length > 0 ? (inteiras / itens.length * 100) : 0
+  // ── estado dos produtos — só conta itens JÁ avaliados (recebidos/conferidos)
+  const avaliados   = itens.filter(i => i.status !== 'avaliar')
+  const comProblema = avaliados.filter(i => i.condicao === 'defeito').length
+  const inteiras    = avaliados.length - comProblema
+  const pctBom      = avaliados.length > 0 ? (inteiras / avaliados.length * 100) : 0
   const corEstado   = pctBom >= 70 ? 'var(--green)' : pctBom >= 40 ? 'var(--amber)' : 'var(--red)'
 
   const preVendas    = itens.filter(i => i.pre_venda_preco != null && i.status !== 'vendido')
@@ -264,17 +265,17 @@ export default function LoteDetalhe() {
         <div className="meter-head">
           <span className="lbl">
             Estado dos produtos
-            {itens.length > 0 && <> — {inteiras} inteira{inteiras !== 1 ? 's' : ''} · {comProblema} com problema</>}
+            {avaliados.length > 0 && <> — {avaliados.length} avaliado{avaliados.length !== 1 ? 's' : ''} · {inteiras} íntegro{inteiras !== 1 ? 's' : ''} · {comProblema} com defeito</>}
           </span>
-          <span className="pct num" style={{ color: corEstado }}>
-            {itens.length > 0 ? `${pctBom.toFixed(0)}% bom` : '—'}
+          <span className="pct num" style={{ color: avaliados.length > 0 ? corEstado : 'var(--mut)' }}>
+            {avaliados.length > 0 ? `${pctBom.toFixed(0)}% bom` : '—'}
           </span>
         </div>
-        <div className="meter"><div className="fill" style={{ width: `${pctBom}%`, background: corEstado }} /></div>
+        <div className="meter"><div className="fill" style={{ width: `${avaliados.length > 0 ? pctBom : 0}%`, background: corEstado }} /></div>
         <div className="meter-foot">
-          {itens.length === 0
-            ? 'Marque a condição de cada item (OK ou Defeito) para acompanhar o estado do lote.'
-            : `${pctBom.toFixed(0)}% dos itens estão íntegros. Quanto pior o estado, mais agressivo o desconto na hora de formalizar os preços de venda.`}
+          {avaliados.length === 0
+            ? `Nenhum equipamento avaliado ainda${itens.length > 0 ? ` — ${itens.length} a avaliar` : ''}. Marque a condição (OK ou Defeito) conforme receber e conferir.`
+            : `${pctBom.toFixed(0)}% dos avaliados estão íntegros. Quanto pior o estado, mais agressivo o desconto na hora de formalizar os preços de venda.`}
         </div>
       </div>
 
