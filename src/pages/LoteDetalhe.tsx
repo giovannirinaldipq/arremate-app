@@ -5,7 +5,7 @@ import { BRL, dtBR } from '../lib/calc'
 import type { Lote, CustoExtra, ItemCalculado } from '../types'
 import SaleModal, { type SaleItem } from '../components/SaleModal'
 
-type Filtro = 'todos' | 'avaliar' | 'estoque' | 'vendido'
+type Filtro = 'todos' | 'avaliar' | 'estoque' | 'vendido' | 'prevenda'
 
 interface EditLoteForm {
   origem: string; data_arremate: string; data_retirada: string
@@ -106,12 +106,16 @@ export default function LoteDetalhe() {
   const preVendas    = itens.filter(i => i.pre_venda_preco != null && i.status !== 'vendido')
   const totalPreVenda = preVendas.reduce((s, i) => s + Number(i.pre_venda_preco), 0)
 
-  const itensFiltrados = filtro === 'todos' ? itens : itens.filter(i => i.status === filtro)
+  const itensFiltrados =
+    filtro === 'todos'    ? itens
+    : filtro === 'prevenda' ? preVendas
+    : itens.filter(i => i.status === filtro)
   const counts = {
-    todos:   itens.length,
-    avaliar: itens.filter(i => i.status === 'avaliar').length,
-    estoque: itens.filter(i => i.status === 'estoque').length,
-    vendido: itens.filter(i => i.status === 'vendido').length,
+    todos:    itens.length,
+    avaliar:  itens.filter(i => i.status === 'avaliar').length,
+    estoque:  itens.filter(i => i.status === 'estoque').length,
+    vendido:  itens.filter(i => i.status === 'vendido').length,
+    prevenda: preVendas.length,
   }
 
   // ── editar lote ──────────────────────────────────────────────────────────
@@ -328,14 +332,14 @@ export default function LoteDetalhe() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <h2>Itens</h2>
             <div style={{ display: 'flex', gap: 4 }}>
-              {(['todos','avaliar','estoque','vendido'] as Filtro[]).map(f => (
+              {(['todos','avaliar','estoque','vendido','prevenda'] as Filtro[]).map(f => (
                 <button key={f} onClick={() => setFiltro(f)} style={{
                   padding: '3px 10px', fontSize: 12, fontWeight: 600,
                   border: '1px solid var(--line)', borderRadius: 6, cursor: 'pointer',
                   background: filtro === f ? 'var(--ink)' : 'var(--surface)',
                   color:      filtro === f ? '#fff' : 'var(--mut)',
                 }}>
-                  {f === 'todos' ? 'Todos' : f === 'avaliar' ? 'A avaliar' : f === 'estoque' ? 'Estoque' : 'Vendidos'}
+                  {f === 'todos' ? 'Todos' : f === 'avaliar' ? 'A avaliar' : f === 'estoque' ? 'Estoque' : f === 'vendido' ? 'Vendidos' : 'Pré-vendidos'}
                   {' '}<span style={{ opacity: 0.7 }}>({counts[f]})</span>
                 </button>
               ))}
