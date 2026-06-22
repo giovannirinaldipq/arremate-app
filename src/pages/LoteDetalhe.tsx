@@ -103,6 +103,9 @@ export default function LoteDetalhe() {
   const pctBom      = itens.length > 0 ? (inteiras / itens.length * 100) : 0
   const corEstado   = pctBom >= 70 ? 'var(--green)' : pctBom >= 40 ? 'var(--amber)' : 'var(--red)'
 
+  const preVendas    = itens.filter(i => i.pre_venda_preco != null && i.status !== 'vendido')
+  const totalPreVenda = preVendas.reduce((s, i) => s + Number(i.pre_venda_preco), 0)
+
   const itensFiltrados = filtro === 'todos' ? itens : itens.filter(i => i.status === filtro)
   const counts = {
     todos:   itens.length,
@@ -271,6 +274,26 @@ export default function LoteDetalhe() {
         </div>
       </div>
 
+      {/* Pré-vendas */}
+      {itens.length > 0 && (
+        <div className="panel">
+          <div className="panel-head"><h2>Pré-vendas</h2></div>
+          <div className="panel-body">
+            <div className="cost-row">
+              <span className="lbl">Unidades em pré-venda</span>
+              <span className="num">{preVendas.length} de {itens.length}</span>
+            </div>
+            <div className="cost-row">
+              <span className="lbl">Valor combinado (previsto)</span>
+              <span className="num">{BRL(totalPreVenda)}</span>
+            </div>
+            <div className="meter-foot" style={{ marginTop: 8 }}>
+              Pré-vendas são intenções de compra de itens que ainda não chegaram. Não alteram o estoque até a venda ser confirmada.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Custos */}
       <div className="panel">
         <div className="panel-head">
@@ -355,7 +378,7 @@ export default function LoteDetalhe() {
                       <td><span className={`badge ${badgeCls}`}>{badgeTxt}</span></td>
                       <td>
                         {it.status === 'vendido'  && <span className="age">vendido</span>}
-                        {it.status === 'avaliar'  && <span className="age">—</span>}
+                        {it.status === 'avaliar'  && (it.pre_venda_preco != null ? <span className="age" style={{ color: 'var(--green)', fontWeight: 700 }}>Pré-venda</span> : <span className="age">—</span>)}
                         {it.status === 'estoque'  && <span className={`age ${parado ? 'warn' : ''}`}>{dias} dias</span>}
                       </td>
                       <td className="right" onClick={e => e.stopPropagation()}>
@@ -363,7 +386,7 @@ export default function LoteDetalhe() {
                           <button
                             className="btn primary"
                             style={{ padding: '5px 10px', fontSize: 12, background: it.status === 'avaliar' ? 'linear-gradient(135deg,#d97706,#b45309)' : undefined, boxShadow: it.status === 'avaliar' ? '0 4px 12px rgba(217,119,6,0.35)' : undefined }}
-                            onClick={() => setSaleItem({ id: it.id, modelo: it.modelo, preco_sugerido: it.preco_sugerido, custo_total_unitario: it.custo_total_unitario })}
+                            onClick={() => setSaleItem({ id: it.id, modelo: it.modelo, preco_sugerido: it.preco_sugerido, custo_total_unitario: it.custo_total_unitario, mode: it.status === 'avaliar' ? 'prevenda' : 'venda', cliente: it.pre_venda_cliente, contato: it.pre_venda_contato, preco: it.pre_venda_preco })}
                           >
                             {it.status === 'avaliar' ? 'Pré-venda' : 'Vender'}
                           </button>

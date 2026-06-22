@@ -120,6 +120,14 @@ export default function ItemDetalhe() {
     setShowObs(false); load()
   }
 
+  async function cancelarPreVenda() {
+    if (!item) return
+    if (!confirm('Cancelar a pré-venda deste item?')) return
+    const { error } = await supabase.from('itens').update({ pre_venda_cliente: null, pre_venda_contato: null, pre_venda_preco: null }).eq('id', item.id)
+    if (error) { alert('Erro: ' + error.message); return }
+    load()
+  }
+
   if (loading) return <div className="empty-state">Carregando…</div>
   if (erro)    return <div className="empty-state" style={{ color: 'var(--red)' }}>Erro: {erro}</div>
   if (!item)   return null
@@ -164,7 +172,7 @@ export default function ItemDetalhe() {
             <button
               className="btn primary"
               style={isAvaliar ? { background: 'linear-gradient(135deg,#d97706,#b45309)', boxShadow: '0 4px 12px rgba(217,119,6,0.35)', borderColor: 'transparent' } : undefined}
-              onClick={() => setSaleItem({ id: item.id, modelo: item.modelo, preco_sugerido: sugUnit, custo_total_unitario: custoUnit })}
+              onClick={() => setSaleItem({ id: item.id, modelo: item.modelo, preco_sugerido: sugUnit, custo_total_unitario: custoUnit, mode: isAvaliar ? 'prevenda' : 'venda', cliente: item.pre_venda_cliente, contato: item.pre_venda_contato, preco: item.pre_venda_preco })}
             >
               {isAvaliar ? 'Pré-venda' : 'Registrar venda'}
             </button>
@@ -175,6 +183,13 @@ export default function ItemDetalhe() {
       {isAvaliar && (
         <div style={{ background: 'var(--amber-bg)', border: '1px solid #f0d99a', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 14, fontSize: 13.5, color: '#7a5200' }}>
           ⏳ <strong>Produto em avaliação.</strong> Assim que receber e conferir, edite o item e mude o status para "Em estoque".
+        </div>
+      )}
+
+      {!isVendido && item.pre_venda_preco != null && (
+        <div style={{ background: 'var(--green-bg)', border: '1px solid #6ee7b7', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 14, fontSize: 13.5, color: '#065f46', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span>🤝 <strong>Pré-venda registrada:</strong> {item.pre_venda_cliente}{item.pre_venda_contato ? ` · ${item.pre_venda_contato}` : ''} · combinado {BRL(Number(item.pre_venda_preco))}</span>
+          <button className="btn" onClick={cancelarPreVenda} style={{ fontSize: 12 }}>Cancelar pré-venda</button>
         </div>
       )}
 

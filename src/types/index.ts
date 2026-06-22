@@ -25,6 +25,9 @@ export interface Item {
   valor_referencia: number | null
   specs: Record<string, string>
   observacoes: string | null
+  pre_venda_cliente: string | null
+  pre_venda_contato: string | null
+  pre_venda_preco: number | null
   condicao: 'ok' | 'defeito'
   descricao_defeito: string | null
   custo_conserto: number
